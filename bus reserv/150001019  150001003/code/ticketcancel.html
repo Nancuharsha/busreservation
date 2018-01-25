@@ -1,0 +1,188 @@
+<?php
+session_start();
+require 'connect.php';
+?>
+
+<!DOCTYPE HTML>
+<html>
+<style>
+.error {color: #FF0000;}
+.simple
+{
+font-size:20px;
+	font-weight:bold;
+}
+</style>
+<body>
+
+<?php
+$txn=$_SESSION['t_id'];
+$noof=$_SESSION['noof'];
+$seaterr="";
+$i=0;
+$err="";
+function refund($x)
+{
+$jdate=$_SESSION['Date'];
+$jtime=$x;
+date_default_timezone_set('Asia/Kolkata');
+$today=date('Y-m-d');
+$currtime= date('H:i');
+$a = DateTime::createFromFormat('H:i Y-m-d', $currtime.' '.$today);
+$b = DateTime::createFromFormat('H:i Y-m-d', $jtime.' '.$jdate);
+
+$interval = $a->diff($b);
+$hours    = ($interval->days * 24) + $interval->h
+          + ($interval->i / 60) + ($interval->s / 3600);
+
+$min=($hours*60);
+if($min>=1440)
+{
+$discount=0.9;
+}
+
+else if($min>=720 && $min<1440)
+{
+$discount=0.7;
+}
+
+else if($min>=240 && $min<720)
+{
+$discount=0.5;
+}
+else
+{
+$discount=0;
+}
+return $discount;
+}
+$k=0;
+$x=1;
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+	
+	if(empty($_POST['verify']))
+	{
+	$err="Make sure that you have read the terms and conditions and checked the box below!";
+	$x=0;
+	}
+	
+	if(empty($_POST['check_list']))
+	{
+	$seaterr="PLEASE SELECT atleast ONE seat";
+	}
+	else
+	{
+	if($x==1)
+	{
+	foreach($_POST['check_list'] as $temp)
+	{
+	$k++;
+	$a[$k]=$temp;
+	}
+				$y=$_SESSION['P_id'.'1'];
+				$sql4="SELECT * FROM seats join via on seats.O_id=via.O_id && seats.R_id=via.R_id && seats.B_id=via.B_id && P_id='$y'";
+				$result4=mysqli_query($conn,$sql4);
+if(!$result4)
+{
+die(mysqli_error($conn));
+}
+			if(mysqli_num_rows($result4)>0)
+			{
+			$row=mysqli_fetch_assoc($result4);
+			$jtime=substr($row['Dept_time'],0,5);
+			}
+	for($j=1;$j<=$k;$j++)
+	{
+	$y=$_SESSION['P_id'.$a[$j]];
+	mysqli_query($conn,"DELETE FROM seats WHERE P_id= '$y'");
+				if(mysqli_affected_rows($conn)>0)
+				{
+				}
+				else
+				{
+				die(mysqli_error($conn));
+				}
+	}
+
+	
+	for($j=1;$j<=$k;$j++)
+	{
+	$y=$_SESSION['P_id'.$a[$j]];
+	mysqli_query($conn,"DELETE FROM passengers WHERE P_id= '$y'");
+				if(mysqli_affected_rows($conn)>0)
+				{
+				}
+				else
+				{
+				 die(mysqli_error($conn));
+				}
+	}
+			$sql5="SELECT * FROM payment WHERE Txn_id= '$txn'";
+			$result5=mysqli_query($conn,$sql5);
+if(!$result5)
+{
+die(mysqli_error($conn));
+}
+			if(mysqli_num_rows($result5)>0)
+			{
+			$row=mysqli_fetch_assoc($result5);
+			$dis=refund($jtime);
+			if($dis>0)
+			{
+			$final=$row['final_amnt']/$noof;
+			$final=$final*$dis*$k;
+			$a=$row['final_amnt']-$final;
+			$y="UPDATE payment SET final_amnt=$a WHERE Txn_id=$txn";
+			$rst=mysqli_query($conn,$y);
+			if(!$rst)
+			{
+			die(mysqli_error($conn));
+			}
+			$card=$row['card_no'];
+			$cardnew=substr_replace($card,'************',0,12);
+			echo "Successfully cancelled ticket.<br><br>";
+			echo "Refund of Rs.$final(as per T&C of cancellation) has been initiated to account no. $cardnew and the same will be received within 4 working days.<br><br>";
+			}
+			else
+			{
+			echo 'Successfully cancelled ticket.<br><br>';
+			echo 'According to T&C of cancellation you wont get any refund for this cancellation';
+			}
+	die();
+	}
+	}		
+	}
+	}
+	
+?>
+<h2>CANCELLATION</h2>
+<form method="POST" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>" >
+	<span class="error"><?php echo $seaterr;?></span><br>
+	<span class="error"><?php echo $err;?></span><br>
+<?php
+$noof=$_SESSION['noof'];
+echo "<p class='simple'> You have booked these tickets<p>";
+echo "<p class='simple'>Select seat/s from below to cancel </p>";
+
+
+for($i=1;$i<=$noof;$i++)
+{
+$y=$_SESSION['P_id'.$i];
+$res=mysqli_query($conn,"SELECT seat_no FROM seats WHERE P_id= '$y' ");
+if(!$res)
+{
+die(mysqli_error());
+}
+$row=mysqli_fetch_assoc($res);
+$x=$row['seat_no'];
+$_SESSION['seat'.$i]=$x;
+?>
+<input type="checkbox" name="check_list[<?php echo $i;?>]" value="<?php echo $i;?>"><strong><?php echo $x;?> &nbsp</strong><br><br>
+<?php
+}
+?>
+<input type="checkbox" name="verify" value="yes"><strong>I have read the terms and connditions of cancellation.</strong><br><br>
+<br><input type="submit" name="submit" value="go">
+</form>
+</body>
+</html>

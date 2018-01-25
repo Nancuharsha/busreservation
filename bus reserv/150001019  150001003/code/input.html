@@ -1,0 +1,181 @@
+<?php
+session_start()
+?>
+
+<!DOCTYPE HTML>
+<html>
+<style>
+.error {
+color: black;
+
+
+}
+.heading
+{
+text-shadow: 2px 2px 4px #000000;
+padding: 20px;
+border-style: none;
+border-color: none;
+background-color: none;
+text-align: center;
+color: white;
+padding-top: 30px;
+    padding-right: 30px;
+    padding-bottom: 30px;
+    padding-left: 80px;
+}
+input[type=text]{
+    width: 100%;
+	align=center;
+    padding: 12px 20px;
+    margin: 8px 0;
+    display: inline-block;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+.places
+{
+color: green;
+}
+.button {
+	
+    background-color: rgb(79, 70, 79);
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size:18px;
+	  border: 2px ;
+   
+    cursor: pointer;
+	-webkit-transition-duration: 0.4s; /* Safari */
+    transition-duration: 0.4s;
+}
+.button:hover {
+   background-color: none;
+ /* Green */
+    color: white;
+	text-shadow: 2px 2px 4px #000000;
+	}
+.input
+{
+color: white; 
+text-shadow: 2px 2px 4px #000000;
+}
+body
+{
+background-image:url("bus.png");
+background-repeat: no-repeat;
+background-size: 1500px 700px;
+}
+
+</style>
+<body>
+
+<?php
+$fromerr="";
+$toerr="";
+$onerr="";
+$from="";
+$to="";
+$on="";
+$valid=0;
+
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+	
+	if(empty($_POST["from"]))
+	{
+		$fromerr="Source is required";
+	}
+	else
+	{
+		$valid++;
+		$from=$_POST["from"];
+	}
+
+	if(empty($_POST["to"]))
+	{
+		$toerr="Destination is required";
+	}
+	else
+	{
+		$valid++;
+		$to=$_POST["to"];
+	}
+
+	if(empty($_POST["on"]))
+	{
+		$onerr="Date is required";
+	}
+	else
+	{
+		$valid++;
+		$on=$_POST["on"];
+		
+	}
+	if($valid==3)
+	{
+	$_SESSION['Dept_city']=$from;
+	$_SESSION['Arr_city']=$to;
+	$_SESSION['Date']=$on;	
+	header('Location: http://localhost/bus.php');
+	}
+}
+?>
+
+
+
+
+<h2 class="heading">SEARCH FOR YOUR BUS</h2>
+<p align="center"><span class="error"><strong>* required field.</strong></span></p><br><br>
+
+<form method="POST" autocomplete="off" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>" >
+
+<p class="input" align=center><strong>FROM:</strong> &nbsp	
+<input  list ="places" name="from" value="<?php echo $from;?>">
+<datalist id="places">
+<option value="Hyderabad">
+<option value="Indore">
+<option value="Banglore">
+<option value="Chennai">
+<option value="Vishakapatanam">
+<option value="Nagpur">
+</datalist>
+<span class="error">* <?php echo $fromerr;?></span>
+</p>
+<br><br>
+
+<p class="input" align=center><strong>TO : </strong>&nbsp &nbsp &nbsp &nbsp 
+<input  list ="places" name="to" value="<?php echo $to;?>">
+<datalist id="places">
+<datalist id="places">
+<option value="Hyderabad">
+<option value="Indore">
+<option value="Banglore">
+<option value="Chennai">
+<option value="Vishakapatanam">
+<option value="Nagpur">
+</datalist>
+<span class="error">* <?php echo $toerr;?></span>
+</p>
+<br><br>
+
+<p class="input" align=center>
+<strong>
+ON : </strong>&nbsp &nbsp &nbsp &nbsp
+<input type="date" name="on" min="<?php echo date('Y-m-d');?>" value="<?php echo $on;?>">
+<span class="error">* <?php echo $onerr;?></span>
+
+<br><br>
+</p>
+<p align="center">
+<input class="button" type="submit"  name="submit" value="Search">
+</p>
+</form>
+
+</body>
+</html>

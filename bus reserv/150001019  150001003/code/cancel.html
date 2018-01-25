@@ -1,0 +1,85 @@
+<?php
+session_start();
+require 'connect.php';
+?>
+<!DOCTYPE HTML>
+<html>
+<style>
+.error {color: #FF0000;}
+.button {
+    background-color: white;
+    border: none;
+    color: black;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+	  border: 2px solid #4CAF50;
+    margin: 4px 2px;
+    cursor: pointer;
+}
+</style>
+<h2><p>WELCOME TO MY BUS!</p></h2><br>
+<body>
+<?php
+$txnerr="";
+$txn="";
+
+if ($_SERVER["REQUEST_METHOD"] == "POST")
+{
+	if(empty($_POST['txn_id']))
+	{
+	$txnerr="Enter Transaction Id to delete tickets!";
+	}
+	else
+	{
+	$txn=$_POST['txn_id'];
+	$sql1="SELECT * FROM passengers WHERE Txn_id= '$txn'";
+	$result1=mysqli_query($conn,$sql1);
+if(!$result1)
+{
+die(mysqli_error($conn));
+}
+$c=mysqli_num_rows($result1);
+	if($c>0)
+	{
+	while($row=mysqli_fetch_assoc($result1))
+	{
+	$i++;
+	if($i==1)
+	{
+	$_SESSION['contact']=$row['contact'];
+	}
+	$_SESSION['P_id'.$i]=$row['P_id'];
+	$_SESSION['Date']=$row['journey_date'];
+	}
+	$_SESSION['noof']=$i;
+	$_SESSION['t_id']=$txn;
+	header('Location: http://localhost/tmultiple.html');
+	}
+	else
+	{
+	$txnerr="Please Enter a valid txn id!";
+	}
+	}
+	}
+?>
+
+
+
+
+<h4>Please enter  Transaction Id(Txn Id)to cancel ticket's.If you have forgotten your transaction id then please contact customer care</h4><br>
+<form method="POST" autocomplete="off" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>" >
+<span class="error"><?php echo $txnerr;?></span><br><br>
+
+Txn Id  &nbsp &nbsp :&nbsp &nbsp <input type="text" name="txn_id" value="<?php echo $txn;?>"><br><br>
+
+<input type="submit" name="submit" value="proceed">
+</form>
+
+</body>
+</html>
+
+
+

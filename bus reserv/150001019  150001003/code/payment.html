@@ -1,0 +1,215 @@
+<?php
+session_start();
+require 'connect.php';
+?>
+
+<!DOCTYPE HTML>
+<html>
+<style>
+.error {color: #FF0000;}
+.heading
+{
+padding: 20px;
+border-style: none;
+border-color: none;
+background-color: none;
+text-align: center;
+color: white;
+padding-top: 30px;
+    padding-right: 30px;
+    padding-bottom: 30px;
+    padding-left: 80px;
+	color: white;
+    text-shadow: 2px 2px 4px #000000;
+}
+body
+{
+background-image:url("bus.png");
+background-repeat: no-repeat;
+background-size: 1500px 800px;
+}	
+p{
+font-size=20px;
+}
+.button {
+    background-color: white;
+    border: none;
+    color: black;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+	  border-radius:8px;
+    cursor: pointer;
+	-webkit-transition-duration: 0.4s;
+    transition-duration: 0.4s;
+	
+}
+
+.button:hover
+{
+    background-color: #4CAF50; 
+    color: white;
+	font-size:14px;
+}
+</style>
+<body>
+
+<?php
+$methoderr="";
+$carderr="";
+$amounterr="";
+$couponerr="";
+$method="";
+$card="";
+$amount="";
+$coupon="";
+$cpns="";
+$valid=0;
+$x=0;
+$_SESSION['applied']=0;
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+		
+	switch($_POST['submit'])
+	{
+	
+	case 'apply':
+
+	if(!empty($_POST['coupon']) && $x==0)
+	{
+	$_SESSION['applied']=1;
+	$coupon=$_POST['coupon'];
+	$temp=$_POST['coupon'];
+	$today=date('Y-m-d');
+	$sql="SELECT * FROM coupons WHERE Cpn_code='$temp'";
+	$result=mysqli_query($conn,$sql);
+	if(!$result)
+	{
+	die(mysqli_error($conn));
+	}
+	if(mysqli_num_rows($result)>0)
+	{
+	$row=mysqli_fetch_assoc($result);
+    if($today<$row['valid_date'])
+	{
+	$valid++;
+	$f=$_SESSION['final'];
+	$e=$f*$row['Discount_%']/100;
+	if($e>$row['Max_discount'])
+	{
+	$f=$f-$row['Max_discount'];
+	}
+	else
+	{
+	$f=$f-$e;
+	}
+	$cpns="Coupon applied successfully!";
+	$_SESSION['final']=round($f);
+	$_SESSION['coupon']=$coupon;
+$x=1;
+	}
+	else
+	{
+	$couponerr="Sorry Coupon expired !Try another coupon";
+	}
+	}
+	else
+	{
+	$couponerr="Enter a valid coupon!";
+	}
+	}
+	break;
+	
+	case 'pay':
+	
+	if(empty($_POST["method"]))
+	{
+		$methoderr="Method is required";
+	}
+	else
+	{
+	$valid++;
+	$method=$_POST["method"];
+	}
+
+	if(empty($_POST["card"]))
+	{
+		$carderr="Card No. is required";
+	}
+	else
+	{
+	$valid++;
+	$card=$_POST["card"];
+	}
+
+	if(empty($_POST["cvv"]))
+	{
+		$amounterr="CVV is required";
+	}
+	else
+		{
+		$cvv=$_POST["cvv"];
+		$valid++;
+		}
+	break;
+	}
+	if($valid>=3)
+	{
+	$_SESSION['Method']=$method;
+	$_SESSION['Card']=$card;
+	$_SESSION['Amount']=$_SESSION["final"];
+	header('Location: http://localhost/success.php');
+	}
+	}?>
+
+
+
+<h1 class="heading">PAYMENT GATEWAY</h1>
+<p><strong><?php echo $cpns;?></strong></p>
+<p>Amount to be paid <strong><?php echo $_SESSION['final'];?></strong> Rs</p>
+<?php
+if($x==0)
+{
+$sum=$_SESSION['count']*$_SESSION['fare'];
+$tax=0.015*$sum;
+$tax=round($tax);
+$final=$sum+$tax;
+echo '<br><br>Basic Fare  : &nbsp &nbsp &nbsp &nbsp &nbsp'.'Rs &nbsp &nbsp'.$sum.'<br>';
+echo 'Service Tax : &nbsp &nbsp &nbsp &nbsp'.'Rs &nbsp &nbsp &nbsp &nbsp'.$tax.'<br>';
+echo 'Final fare  : &nbsp &nbsp &nbsp &nbsp&nbsp &nbsp'.'Rs &nbsp &nbsp'.$final.'<br><br>';	
+}
+?>
+
+<p><span class="error">* required field.</span></p>
+<?php
+if($x==0)
+{
+?>
+<form method="POST" autocomplete="off" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>" >
+<span class="error"><?php echo $couponerr;?></span><br>
+Coupon : <input type="text" name="coupon" value="<?php echo $coupon;?>"> &nbsp &nbsp &nbsp &nbsp
+	
+	<input type="submit" name="submit" value="apply"><br><br>
+	</form>
+<?php
+}
+?>
+	<form method="POST" autocomplete="off" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>" >
+
+ 	<input type="radio" name="method"  value="Debit Card" 	<?php if (isset($method) && $method=="Debit Card"){echo 'checked';} ?> >Debit Card
+    <input type="radio" name="method" <?php if (isset($method) && $method=="Net Banking") echo "checked";?> value="Net Banking">Net Banking
+ 	<input type="radio" name="method" <?php if (isset($method) && $method=="Credit Card") echo "checked";?> value="Credit Card">Credit Card
+	<span class="error">* <?php echo $methoderr;?></span>
+    <br><br>
+	Card No : <input type="text" name="card" id="card" value="<?php echo $card;?>">
+	<span class="error">* <?php echo $carderr;?></span>
+	<br><br>
+	CVV :&nbsp &nbsp &nbsp <input type="text" name="cvv" value="<?php echo $amount;?>">
+	<span class="error">* <?php echo $amounterr;?></span>
+	<br><br><br>
+	
+	<input type="submit" class='button' name="submit" value="pay"><br><br>
+	</form>
+</body>
+</html>
